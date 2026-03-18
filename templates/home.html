@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Dashboard</h2>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">Total Parishioners</h5>
+                <h2>{{ parishioners|length }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title">Total Events</h5>
+                <h2>{{ events|length }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title">Contributions</h5>
+                <h2>{{ contributions|length }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-danger">
+            <div class="card-body">
+                <h5 class="card-title">Sacraments</h5>
+                <h2>{{ sacraments|length }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Parishioners Table -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white d-flex justify-content-between">
+        <h5 class="mb-0">Recent Parishioners</h5>
+        <a href="/parishioners" class="btn btn-sm btn-light">View All</a>
+    </div>
+    <div class="card-body">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in parishioners %}
+                <tr>
+                    <td>{{ p['full_name'] }}</td>
+                    <td>{{ p['phone'] }}</td>
+                    <td>{{ p['email'] }}</td>
+                    <td>
+                        {% if p['status'] == 'Active' %}
+                        <span class="badge bg-success">Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Events Table -->
+<div class="card mb-4">
+    <div class="card-header bg-success text-white d-flex justify-content-between">
+        <h5 class="mb-0">Upcoming Events</h5>
+        <a href="/events" class="btn btn-sm btn-light">View All</a>
+    </div>
+    <div class="card-body">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Date</th>
+                    <th>Location</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in events %}
+                <tr>
+                    <td>{{ e['title'] }}</td>
+                    <td>{{ e['event_date'] }}</td>
+                    <td>{{ e['location'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

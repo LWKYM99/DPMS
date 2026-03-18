@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DPMS - {% block title %}{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background-color: #1a1a2e;
+        }
+        .sidebar a {
+            color: #ffffff;
+            text-decoration: none;
+            display: block;
+            padding: 12px 20px;
+            border-bottom: 1px solid #2a2a4e;
+        }
+        .sidebar a:hover {
+            background-color: #16213e;
+            color: #e94560;
+        }
+        .sidebar .active {
+            background-color: #e94560;
+            color: white;
+        }
+        .sidebar-header {
+            padding: 20px;
+            background-color: #16213e;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .main-content {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+
+        <!-- Sidebar -->
+        <div class="col-md-2 sidebar p-0">
+            <div class="sidebar-header">
+                ⛪ DPMS
+            </div>
+            <a href="/" class="{% if request.path == '/' %}active{% endif %}">
+                📊 Dashboard
+            </a>
+            <a href="/parishioners" class="{% if request.path == '/parishioners' %}active{% endif %}">
+                👥 Parishioners
+            </a>
+            <a href="/events" class="{% if request.path == '/events' %}active{% endif %}">
+                📅 Events
+            </a>
+            <a href="/contributions" class="{% if request.path == '/contributions' %}active{% endif %}">
+                💰 Contributions
+            </a>
+            <a href="/sacraments" class="{% if request.path == '/sacraments' %}active{% endif %}">
+                ✝️ Sacraments
+            </a>
+            <a href="/announcements" class="{% if request.path == '/announcements' %}active{% endif %}">
+                📢 Announcements
+            </a>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-10 main-content p-4">
+            {% block content %}
+            {% endblock %}
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

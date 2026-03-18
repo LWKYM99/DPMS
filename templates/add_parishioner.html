@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Add Parishioner{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between mb-4">
+    <h2>Add New Parishioner</h2>
+    <a href="/parishioners" class="btn btn-secondary">← Back</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" name="full_name" class="form-control" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Phone</label>
+                    <input type="text" name="phone" class="form-control">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" class="form-control">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Gender</label>
+                    <select name="gender" class="form-control">
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Date of Birth</label>
+                    <input type="date" name="date_of_birth" class="form-control">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Join Date</label>
+                    <input type="date" name="join_date" class="form-control">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-control">
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Save Parishioner</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Parishioners{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between mb-4">
+    <h2>Parishioners</h2>
+    <a href="/parishioners/add" class="btn btn-primary">+ Add Parishioner</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Full Name</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Gender</th>
+                    <th>Date of Birth</th>
+                    <th>Join Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in parishioners %}
+                <tr>
+                    <td>{{ p['id'] }}</td>
+                    <td>{{ p['full_name'] }}</td>
+                    <td>{{ p['phone'] }}</td>
+                    <td>{{ p['email'] }}</td>
+                    <td>{{ p['gender'] }}</td>
+                    <td>{{ p['date_of_birth'] }}</td>
+                    <td>{{ p['join_date'] }}</td>
+                    <td>
+                        {% if p['status'] == 'Active' %}
+                        <span class="badge bg-success">Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

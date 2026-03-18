@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Add Event{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between mb-4">
+    <h2>Add New Event</h2>
+    <a href="/events" class="btn btn-secondary">← Back</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Event Title</label>
+                    <input type="text" name="title" class="form-control" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Event Date</label>
+                    <input type="date" name="event_date" class="form-control" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Location</label>
+                    <input type="text" name="location" class="form-control">
+                </div>
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" class="form-control" rows="3"></textarea>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-success">Save Event</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

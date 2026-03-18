@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Announcements{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between mb-4">
+    <h2>Announcements</h2>
+</div>
+
+<div class="row">
+    {% for a in announcements %}
+    <div class="col-md-6 mb-3">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                {{ a['title'] }}
+            </div>
+            <div class="card-body">
+                <p class="card-text">{{ a['message'] }}</p>
+                <small class="text-muted">Date: {{ a['created_at'] }} | Audience: {{ a['audience'] }}</small>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
