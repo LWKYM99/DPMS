@@ -1,8 +1,54 @@
 from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
 import os
+def init_db():
+    conn = sqlite3.connect('dpms.db')
+    conn.execute('''CREATE TABLE IF NOT EXISTS Parishioners (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        full_name TEXT NOT NULL,
+        phone TEXT,
+        email TEXT,
+        gender TEXT,
+        date_of_birth TEXT,
+        join_date TEXT,
+        status TEXT NOT NULL DEFAULT 'Active')''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        event_date TEXT NOT NULL,
+        location TEXT,
+        description TEXT,
+        created_at TEXT DEFAULT (date('now')))''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS contributions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        parishioner_id INTEGER,
+        amount REAL NOT NULL,
+        category TEXT NOT NULL,
+        contribution_date TEXT NOT NULL,
+        notes TEXT)''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS sacraments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        parishioner_id INTEGER,
+        sacrament_type TEXT NOT NULL,
+        date_received TEXT,
+        officiant TEXT,
+        notes TEXT)''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS announcements (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        message TEXT NOT NULL,
+        created_at TEXT DEFAULT (date('now')),
+        audience TEXT DEFAULT 'All')''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS attendance (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        parishioner_id INTEGER,
+        event_id INTEGER,
+        attended TEXT DEFAULT 'Yes')''')
+    conn.commit()
+    conn.close()
 
 app = Flask(__name__)
+init_db()
 
 def get_db():
     conn = sqlite3.connect('dpms.db')
