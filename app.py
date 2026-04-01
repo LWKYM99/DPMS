@@ -117,7 +117,21 @@ def contributions():
                         JOIN Parishioners p ON c.parishioner_id = p.id''').fetchall()
     db.close()
     return render_template('contributions.html', contributions=data)
-
+@app.route('/contributions/add', methods=['GET', 'POST'])
+def add_contribution():
+    if request.method == 'POST':
+        db = get_db()
+        db.execute('INSERT INTO contributions (parishioner_id, amount, category, contribution_date, notes) VALUES (?, ?, ?, ?, ?)',
+            [request.form['parishioner_id'], request.form['amount'],
+             request.form['category'], request.form['contribution_date'],
+             request.form['notes']])
+        db.commit()
+        db.close()
+        return redirect(url_for('contributions'))
+    db = get_db()
+    parishioners = db.execute('SELECT id, full_name FROM Parishioners').fetchall()
+    db.close()
+    return render_template('add_contribution.html', parishioners=parishioners)
 @app.route('/sacraments')
 def sacraments():
     db = get_db()
