@@ -89,7 +89,29 @@ def add_parishioner():
         db.close()
         return redirect(url_for('parishioners'))
     return render_template('add_parishioner.html')
+@app.route('/parishioners/edit/<int:id>', methods=['GET', 'POST'])
+def edit_parishioner(id):
+    db = get_db()
+    if request.method == 'POST':
+        db.execute('UPDATE Parishioners SET full_name=?, phone=?, email=?, gender=?, date_of_birth=?, join_date=?, status=? WHERE id=?',
+            [request.form['full_name'], request.form['phone'],
+             request.form['email'], request.form['gender'],
+             request.form['date_of_birth'], request.form['join_date'],
+             request.form['status'], id])
+        db.commit()
+        db.close()
+        return redirect(url_for('parishioners'))
+    parishioner = db.execute('SELECT * FROM Parishioners WHERE id=?', [id]).fetchone()
+    db.close()
+    return render_template('edit_parishioner.html', p=parishioner)
 
+@app.route('/parishioners/delete/<int:id>')
+def delete_parishioner(id):
+    db = get_db()
+    db.execute('DELETE FROM Parishioners WHERE id=?', [id])
+    db.commit()
+    db.close()
+    return redirect(url_for('parishioners'))
 @app.route('/events')
 def events():
     db = get_db()

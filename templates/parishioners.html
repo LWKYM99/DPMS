@@ -20,6 +20,7 @@
                     <th>Date of Birth</th>
                     <th>Join Date</th>
                     <th>Status</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -38,6 +39,9 @@
                         {% else %}
                         <span class="badge bg-secondary">Inactive</span>
                         {% endif %}
+                    </td>
+                    <a href="/parishioners/edit/{{ p['id'] }}" class="btn btn-sm btn-warning">Edit</a>
+                        <a href="/parishioners/delete/{{ p['id'] }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this parishioner?')">Delete</a>
                     </td>
                 </tr>
                 {% endfor %}

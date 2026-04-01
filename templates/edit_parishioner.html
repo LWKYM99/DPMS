@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Edit Parishioner{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between mb-4">
+    <h2>Edit Parishioner</h2>
+    <a href="/parishioners" class="btn btn-secondary">← Back</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <div class="mb-3">
+                <label class="form-label">Full Name</label>
+                <input type="text" name="full_name" class="form-control" value="{{ p['full_name'] }}" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Phone</label>
+                <input type="text" name="phone" class="form-control" value="{{ p['phone'] }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" class="form-control" value="{{ p['email'] }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Gender</label>
+                <select name="gender" class="form-select">
+                    <option {% if p['gender'] == 'Male' %}selected{% endif %}>Male</option>
+                    <option {% if p['gender'] == 'Female' %}selected{% endif %}>Female</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Date of Birth</label>
+                <input type="date" name="date_of_birth" class="form-control" value="{{ p['date_of_birth'] }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Join Date</label>
+                <input type="date" name="join_date" class="form-control" value="{{ p['join_date'] }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option {% if p['status'] == 'Active' %}selected{% endif %}>Active</option>
+                    <option {% if p['status'] == 'Inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
