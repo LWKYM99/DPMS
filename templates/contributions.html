@@ -18,6 +18,7 @@
                     <th>Category</th>
                     <th>Date</th>
                     <th>Notes</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -29,6 +30,10 @@
                     <td>{{ c['category'] }}</td>
                     <td>{{ c['contribution_date'] }}</td>
                     <td>{{ c['notes'] }}</td>
+                    <td>
+                        <a href="/contributions/edit/{{ c['id'] }}" class="btn btn-sm btn-warning">Edit</a>
+                        <a href="/contributions/delete/{{ c['id'] }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this contribution?')">Delete</a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

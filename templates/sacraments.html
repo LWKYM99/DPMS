@@ -18,6 +18,7 @@
                     <th>Date Received</th>
                     <th>Officiant</th>
                     <th>Notes</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -29,6 +30,10 @@
                     <td>{{ s['date_received'] }}</td>
                     <td>{{ s['officiant'] }}</td>
                     <td>{{ s['notes'] }}</td>
+                    <td>
+                        <a href="/sacraments/edit/{{ s['id'] }}" class="btn btn-sm btn-warning">Edit</a>
+                        <a href="/sacraments/delete/{{ s['id'] }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this record?')">Delete</a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

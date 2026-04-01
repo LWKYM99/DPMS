@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
 import os
+
 def init_db():
     conn = sqlite3.connect('dpms.db')
     conn.execute('''CREATE TABLE IF NOT EXISTS Parishioners (
@@ -69,6 +70,7 @@ def home():
         contributions=contributions,
         sacraments=sacraments)
 
+# ── Parishioners ──────────────────────────────────────────
 @app.route('/parishioners')
 def parishioners():
     db = get_db()
@@ -89,6 +91,7 @@ def add_parishioner():
         db.close()
         return redirect(url_for('parishioners'))
     return render_template('add_parishioner.html')
+
 @app.route('/parishioners/edit/<int:id>', methods=['GET', 'POST'])
 def edit_parishioner(id):
     db = get_db()
@@ -112,6 +115,8 @@ def delete_parishioner(id):
     db.commit()
     db.close()
     return redirect(url_for('parishioners'))
+
+# ── Events ────────────────────────────────────────────────
 @app.route('/events')
 def events():
     db = get_db()
@@ -130,6 +135,7 @@ def add_event():
         db.close()
         return redirect(url_for('events'))
     return render_template('add_event.html')
+
 @app.route('/events/edit/<int:id>', methods=['GET', 'POST'])
 def edit_event(id):
     db = get_db()
@@ -151,6 +157,8 @@ def delete_event(id):
     db.commit()
     db.close()
     return redirect(url_for('events'))
+
+# ── Contributions ─────────────────────────────────────────
 @app.route('/contributions')
 def contributions():
     db = get_db()
@@ -159,6 +167,7 @@ def contributions():
                         JOIN Parishioners p ON c.parishioner_id = p.id''').fetchall()
     db.close()
     return render_template('contributions.html', contributions=data)
+
 @app.route('/contributions/add', methods=['GET', 'POST'])
 def add_contribution():
     if request.method == 'POST':
@@ -174,6 +183,32 @@ def add_contribution():
     parishioners = db.execute('SELECT id, full_name FROM Parishioners').fetchall()
     db.close()
     return render_template('add_contribution.html', parishioners=parishioners)
+
+@app.route('/contributions/edit/<int:id>', methods=['GET', 'POST'])
+def edit_contribution(id):
+    db = get_db()
+    if request.method == 'POST':
+        db.execute('UPDATE contributions SET parishioner_id=?, amount=?, category=?, contribution_date=?, notes=? WHERE id=?',
+            [request.form['parishioner_id'], request.form['amount'],
+             request.form['category'], request.form['contribution_date'],
+             request.form['notes'], id])
+        db.commit()
+        db.close()
+        return redirect(url_for('contributions'))
+    contribution = db.execute('SELECT * FROM contributions WHERE id=?', [id]).fetchone()
+    parishioners = db.execute('SELECT id, full_name FROM Parishioners').fetchall()
+    db.close()
+    return render_template('edit_contribution.html', c=contribution, parishioners=parishioners)
+
+@app.route('/contributions/delete/<int:id>')
+def delete_contribution(id):
+    db = get_db()
+    db.execute('DELETE FROM contributions WHERE id=?', [id])
+    db.commit()
+    db.close()
+    return redirect(url_for('contributions'))
+
+# ── Sacraments ────────────────────────────────────────────
 @app.route('/sacraments')
 def sacraments():
     db = get_db()
@@ -182,6 +217,7 @@ def sacraments():
                         JOIN Parishioners p ON s.parishioner_id = p.id''').fetchall()
     db.close()
     return render_template('sacraments.html', sacraments=data)
+
 @app.route('/sacraments/add', methods=['GET', 'POST'])
 def add_sacrament():
     if request.method == 'POST':
@@ -197,12 +233,39 @@ def add_sacrament():
     parishioners = db.execute('SELECT id, full_name FROM Parishioners').fetchall()
     db.close()
     return render_template('add_sacrament.html', parishioners=parishioners)
+
+@app.route('/sacraments/edit/<int:id>', methods=['GET', 'POST'])
+def edit_sacrament(id):
+    db = get_db()
+    if request.method == 'POST':
+        db.execute('UPDATE sacraments SET parishioner_id=?, sacrament_type=?, date_received=?, officiant=?, notes=? WHERE id=?',
+            [request.form['parishioner_id'], request.form['sacrament_type'],
+             request.form['date_received'], request.form['officiant'],
+             request.form['notes'], id])
+        db.commit()
+        db.close()
+        return redirect(url_for('sacraments'))
+    sacrament = db.execute('SELECT * FROM sacraments WHERE id=?', [id]).fetchone()
+    parishioners = db.execute('SELECT id, full_name FROM Parishioners').fetchall()
+    db.close()
+    return render_template('edit_sacrament.html', s=sacrament, parishioners=parishioners)
+
+@app.route('/sacraments/delete/<int:id>')
+def delete_sacrament(id):
+    db = get_db()
+    db.execute('DELETE FROM sacraments WHERE id=?', [id])
+    db.commit()
+    db.close()
+    return redirect(url_for('sacraments'))
+
+# ── Announcements ─────────────────────────────────────────
 @app.route('/announcements')
 def announcements():
     db = get_db()
     data = db.execute('SELECT * FROM announcements').fetchall()
     db.close()
     return render_template('announcements.html', announcements=data)
+
 @app.route('/announcements/add', methods=['GET', 'POST'])
 def add_announcement():
     if request.method == 'POST':
@@ -214,5 +277,28 @@ def add_announcement():
         db.close()
         return redirect(url_for('announcements'))
     return render_template('add_announcement.html')
+
+@app.route('/announcements/edit/<int:id>', methods=['GET', 'POST'])
+def edit_announcement(id):
+    db = get_db()
+    if request.method == 'POST':
+        db.execute('UPDATE announcements SET title=?, message=?, audience=? WHERE id=?',
+            [request.form['title'], request.form['message'],
+             request.form['audience'], id])
+        db.commit()
+        db.close()
+        return redirect(url_for('announcements'))
+    announcement = db.execute('SELECT * FROM announcements WHERE id=?', [id]).fetchone()
+    db.close()
+    return render_template('edit_announcement.html', a=announcement)
+
+@app.route('/announcements/delete/<int:id>')
+def delete_announcement(id):
+    db = get_db()
+    db.execute('DELETE FROM announcements WHERE id=?', [id])
+    db.commit()
+    db.close()
+    return redirect(url_for('announcements'))
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)

@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Edit Announcement{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between mb-4">
+    <h2>Edit Announcement</h2>
+    <a href="/announcements" class="btn btn-secondary">← Back</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <div class="mb-3">
+                <label class="form-label">Title</label>
+                <input type="text" name="title" class="form-control" value="{{ a['title'] }}" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Message</label>
+                <textarea name="message" class="form-control" rows="4" required>{{ a['message'] }}</textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Audience</label>
+                <select name="audience" class="form-select" required>
+                    <option {% if a['audience'] == 'All' %}selected{% endif %}>All</option>
+                    <option {% if a['audience'] == 'Members' %}selected{% endif %}>Members</option>
+                    <option {% if a['audience'] == 'Leaders' %}selected{% endif %}>Leaders</option>
+                    <option {% if a['audience'] == 'Youth' %}selected{% endif %}>Youth</option>
+                    <option {% if a['audience'] == 'Women' %}selected{% endif %}>Women</option>
+                    <option {% if a['audience'] == 'Men' %}selected{% endif %}>Men</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
