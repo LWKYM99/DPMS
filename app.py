@@ -1,9 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
 import os
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import urllib.request
+import json
 
 def init_db():
     conn = sqlite3.connect('dpms.db')
@@ -61,18 +60,25 @@ def get_db():
 
 def send_email(to, subject, body):
     try:
+        api_key = os.environ.get('SENDGRID_API_KEY')
         sender = os.environ.get('MAIL_USERNAME')
-        password = os.environ.get('MAIL_PASSWORD')
-        msg = MIMEMultipart()
-        msg['From'] = sender
-        msg['To'] = to
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'html'))
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(sender, password)
-        server.sendmail(sender, to, msg.as_string())
-        server.quit()
+        data = json.dumps({
+            "personalizations": [{"to": [{"email": to}]}],
+            "from": {"email": sender, "name": "DPMS Parish"},
+            "subject": subject,
+            "content": [{"type": "text/html", "value": body}]
+        }).encode('utf-8')
+        req = urllib.request.Request(
+            'https://api.sendgrid.com/v3/mail/send',
+            data=data,
+            headers={
+                'Authorization': f'Bearer {api_key}',
+                'Content-Type': 'application/json'
+            },
+            method='POST'
+        )
+        urllib.request.urlopen(req)
+        print(f"Email sent to {to}")
     except Exception as e:
         print(f"Email error: {e}")
 
