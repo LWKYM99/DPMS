@@ -40,7 +40,8 @@
                         <span class="badge bg-secondary">Inactive</span>
                         {% endif %}
                     </td>
-                    <a href="/parishioners/edit/{{ p['id'] }}" class="btn btn-sm btn-warning">Edit</a>
+                    <td>
+                        <a href="/parishioners/edit/{{ p['id'] }}" class="btn btn-sm btn-warning">Edit</a>
                         <a href="/parishioners/delete/{{ p['id'] }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this parishioner?')">Delete</a>
                     </td>
                 </tr>
