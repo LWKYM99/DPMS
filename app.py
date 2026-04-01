@@ -1,6 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
 import os
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 def init_db():
     conn = sqlite3.connect('dpms.db')
@@ -56,6 +59,23 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
+def send_email(to, subject, body):
+    try:
+        sender = os.environ.get('MAIL_USERNAME')
+        password = os.environ.get('MAIL_PASSWORD')
+        msg = MIMEMultipart()
+        msg['From'] = sender
+        msg['To'] = to
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'html'))
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(sender, password)
+        server.sendmail(sender, to, msg.as_string())
+        server.quit()
+    except Exception as e:
+        print(f"Email error: {e}")
+
 @app.route('/')
 def home():
     db = get_db()
@@ -88,6 +108,12 @@ def add_parishioner():
              request.form['date_of_birth'], request.form['join_date'],
              request.form['status']])
         db.commit()
+        if request.form['email']:
+            send_email(
+                request.form['email'],
+                'Welcome to Our Parish!',
+                f"<h2>Welcome, {request.form['full_name']}!</h2><p>You have been successfully registered in our parish management system.</p><p>God bless you!</p>"
+            )
         db.close()
         return redirect(url_for('parishioners'))
     return render_template('add_parishioner.html')
@@ -132,6 +158,13 @@ def add_event():
             [request.form['title'], request.form['event_date'],
              request.form['location'], request.form['description']])
         db.commit()
+        parishioners = db.execute('SELECT email, full_name FROM Parishioners WHERE email IS NOT NULL AND email != ""').fetchall()
+        for p in parishioners:
+            send_email(
+                p['email'],
+                f"New Event: {request.form['title']}",
+                f"<h2>New Event Announced!</h2><p>Dear {p['full_name']},</p><p><strong>{request.form['title']}</strong> is scheduled for <strong>{request.form['event_date']}</strong> at {request.form['location']}.</p><p>{request.form['description']}</p>"
+            )
         db.close()
         return redirect(url_for('events'))
     return render_template('add_event.html')
@@ -177,6 +210,13 @@ def add_contribution():
              request.form['category'], request.form['contribution_date'],
              request.form['notes']])
         db.commit()
+        parishioner = db.execute('SELECT * FROM Parishioners WHERE id=?', [request.form['parishioner_id']]).fetchone()
+        if parishioner and parishioner['email']:
+            send_email(
+                parishioner['email'],
+                'Contribution Receipt',
+                f"<h2>Contribution Received</h2><p>Dear {parishioner['full_name']},</p><p>Thank you for your contribution of <strong>KSh {request.form['amount']}</strong> ({request.form['category']}) on {request.form['contribution_date']}.</p><p>God bless you!</p>"
+            )
         db.close()
         return redirect(url_for('contributions'))
     db = get_db()
@@ -227,6 +267,13 @@ def add_sacrament():
              request.form['date_received'], request.form['officiant'],
              request.form['notes']])
         db.commit()
+        parishioner = db.execute('SELECT * FROM Parishioners WHERE id=?', [request.form['parishioner_id']]).fetchone()
+        if parishioner and parishioner['email']:
+            send_email(
+                parishioner['email'],
+                f"Sacrament Record: {request.form['sacrament_type']}",
+                f"<h2>Sacramental Record Added</h2><p>Dear {parishioner['full_name']},</p><p>Your <strong>{request.form['sacrament_type']}</strong> record has been recorded on {request.form['date_received']}.</p><p>Officiant: {request.form['officiant']}</p>"
+            )
         db.close()
         return redirect(url_for('sacraments'))
     db = get_db()
@@ -274,6 +321,13 @@ def add_announcement():
             [request.form['title'], request.form['message'],
              request.form['audience']])
         db.commit()
+        parishioners = db.execute('SELECT email, full_name FROM Parishioners WHERE email IS NOT NULL AND email != ""').fetchall()
+        for p in parishioners:
+            send_email(
+                p['email'],
+                f"Parish Announcement: {request.form['title']}",
+                f"<h2>{request.form['title']}</h2><p>Dear {p['full_name']},</p><p>{request.form['message']}</p><p><small>Audience: {request.form['audience']}</small></p>"
+            )
         db.close()
         return redirect(url_for('announcements'))
     return render_template('add_announcement.html')
