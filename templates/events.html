@@ -17,6 +17,7 @@
                     <th>Date</th>
                     <th>Location</th>
                     <th>Description</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -27,6 +28,10 @@
                     <td>{{ e['event_date'] }}</td>
                     <td>{{ e['location'] }}</td>
                     <td>{{ e['description'] }}</td>
+                    <td>
+                        <a href="/events/edit/{{ e['id'] }}" class="btn btn-sm btn-warning">Edit</a>
+                        <a href="/events/delete/{{ e['id'] }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this event?')">Delete</a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

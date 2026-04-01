@@ -130,7 +130,27 @@ def add_event():
         db.close()
         return redirect(url_for('events'))
     return render_template('add_event.html')
+@app.route('/events/edit/<int:id>', methods=['GET', 'POST'])
+def edit_event(id):
+    db = get_db()
+    if request.method == 'POST':
+        db.execute('UPDATE events SET title=?, event_date=?, location=?, description=? WHERE id=?',
+            [request.form['title'], request.form['event_date'],
+             request.form['location'], request.form['description'], id])
+        db.commit()
+        db.close()
+        return redirect(url_for('events'))
+    event = db.execute('SELECT * FROM events WHERE id=?', [id]).fetchone()
+    db.close()
+    return render_template('edit_event.html', e=event)
 
+@app.route('/events/delete/<int:id>')
+def delete_event(id):
+    db = get_db()
+    db.execute('DELETE FROM events WHERE id=?', [id])
+    db.commit()
+    db.close()
+    return redirect(url_for('events'))
 @app.route('/contributions')
 def contributions():
     db = get_db()

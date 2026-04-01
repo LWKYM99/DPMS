@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Edit Event{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between mb-4">
+    <h2>Edit Event</h2>
+    <a href="/events" class="btn btn-secondary">← Back</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <div class="mb-3">
+                <label class="form-label">Title</label>
+                <input type="text" name="title" class="form-control" value="{{ e['title'] }}" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Event Date</label>
+                <input type="date" name="event_date" class="form-control" value="{{ e['event_date'] }}" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Location</label>
+                <input type="text" name="location" class="form-control" value="{{ e['location'] }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Description</label>
+                <textarea name="description" class="form-control" rows="3">{{ e['description'] }}</textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
