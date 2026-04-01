@@ -161,6 +161,16 @@ def announcements():
     data = db.execute('SELECT * FROM announcements').fetchall()
     db.close()
     return render_template('announcements.html', announcements=data)
-
+@app.route('/announcements/add', methods=['GET', 'POST'])
+def add_announcement():
+    if request.method == 'POST':
+        db = get_db()
+        db.execute('INSERT INTO announcements (title, message, audience) VALUES (?, ?, ?)',
+            [request.form['title'], request.form['message'],
+             request.form['audience']])
+        db.commit()
+        db.close()
+        return redirect(url_for('announcements'))
+    return render_template('add_announcement.html')
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)

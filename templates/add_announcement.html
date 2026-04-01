@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Add Announcement{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between mb-4">
+    <h2>Add Announcement</h2>
+    <a href="/announcements" class="btn btn-secondary">← Back</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <div class="mb-3">
+                <label class="form-label">Title</label>
+                <input type="text" name="title" class="form-control" placeholder="e.g. Sunday Service" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Message</label>
+                <textarea name="message" class="form-control" rows="4" placeholder="Write your announcement here..." required></textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Audience</label>
+                <select name="audience" class="form-select" required>
+                    <option value="All">All</option>
+                    <option value="Members">Members</option>
+                    <option value="Leaders">Leaders</option>
+                    <option value="Youth">Youth</option>
+                    <option value="Women">Women</option>
+                    <option value="Men">Men</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Post Announcement</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
