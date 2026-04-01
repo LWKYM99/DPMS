@@ -126,7 +126,21 @@ def sacraments():
                         JOIN Parishioners p ON s.parishioner_id = p.id''').fetchall()
     db.close()
     return render_template('sacraments.html', sacraments=data)
-
+@app.route('/sacraments/add', methods=['GET', 'POST'])
+def add_sacrament():
+    if request.method == 'POST':
+        db = get_db()
+        db.execute('INSERT INTO sacraments (parishioner_id, sacrament_type, date_received, officiant, notes) VALUES (?, ?, ?, ?, ?)',
+            [request.form['parishioner_id'], request.form['sacrament_type'],
+             request.form['date_received'], request.form['officiant'],
+             request.form['notes']])
+        db.commit()
+        db.close()
+        return redirect(url_for('sacraments'))
+    db = get_db()
+    parishioners = db.execute('SELECT id, full_name FROM Parishioners').fetchall()
+    db.close()
+    return render_template('add_sacrament.html', parishioners=parishioners)
 @app.route('/announcements')
 def announcements():
     db = get_db()
