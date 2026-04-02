@@ -2,7 +2,9 @@ from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
 import os
 import urllib.request
+import urllib.parse
 import json
+import base64
 
 def init_db():
     conn = sqlite3.connect('dpms.db')
@@ -63,7 +65,6 @@ def send_sms(to, message):
         account_sid = os.environ.get('TWILIO_ACCOUNT_SID')
         auth_token = os.environ.get('TWILIO_AUTH_TOKEN')
         from_number = os.environ.get('TWILIO_PHONE')
-        # Format phone number
         to = to.strip()
         if to.startswith('0'):
             to = '+254' + to[1:]
@@ -76,7 +77,6 @@ def send_sms(to, message):
         }).encode('utf-8')
         url = f'https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Messages.json'
         req = urllib.request.Request(url, data=data, method='POST')
-        import base64
         credentials = base64.b64encode(f'{account_sid}:{auth_token}'.encode()).decode()
         req.add_header('Authorization', f'Basic {credentials}')
         urllib.request.urlopen(req)
@@ -317,4 +317,35 @@ def add_announcement():
             [request.form['title'], request.form['message'],
              request.form['audience']])
         db.commit()
-        parishioners = db.execute('SELECT phone, full_name FROM Parishioners WHERE phone IS NOT NULL AND phone != ""').fe
+        parishioners = db.execute('SELECT phone, full_name FROM Parishioners WHERE phone IS NOT NULL AND phone != ""').fetchall()
+        for p in parishioners:
+            send_sms(p['phone'],
+                f"Parish Announcement: {request.form['title']} - {request.form['message']}")
+        db.close()
+        return redirect(url_for('announcements'))
+    return render_template('add_announcement.html')
+
+@app.route('/announcements/edit/<int:id>', methods=['GET', 'POST'])
+def edit_announcement(id):
+    db = get_db()
+    if request.method == 'POST':
+        db.execute('UPDATE announcements SET title=?, message=?, audience=? WHERE id=?',
+            [request.form['title'], request.form['message'],
+             request.form['audience'], id])
+        db.commit()
+        db.close()
+        return redirect(url_for('announcements'))
+    announcement = db.execute('SELECT * FROM announcements WHERE id=?', [id]).fetchone()
+    db.close()
+    return render_template('edit_announcement.html', a=announcement)
+
+@app.route('/announcements/delete/<int:id>')
+def delete_announcement(id):
+    db = get_db()
+    db.execute('DELETE FROM announcements WHERE id=?', [id])
+    db.commit()
+    db.close()
+    return redirect(url_for('announcements'))
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
