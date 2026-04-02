@@ -58,29 +58,31 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
-def send_email(to, subject, body):
+def send_sms(to, message):
     try:
-        api_key = os.environ.get('SENDGRID_API_KEY')
-        sender = os.environ.get('MAIL_USERNAME')
-        data = json.dumps({
-            "personalizations": [{"to": [{"email": to}]}],
-            "from": {"email": sender, "name": "DPMS Parish"},
-            "subject": subject,
-            "content": [{"type": "text/html", "value": body}]
+        account_sid = os.environ.get('TWILIO_ACCOUNT_SID')
+        auth_token = os.environ.get('TWILIO_AUTH_TOKEN')
+        from_number = os.environ.get('TWILIO_PHONE')
+        # Format phone number
+        to = to.strip()
+        if to.startswith('0'):
+            to = '+254' + to[1:]
+        elif not to.startswith('+'):
+            to = '+254' + to
+        data = urllib.parse.urlencode({
+            'From': from_number,
+            'To': to,
+            'Body': message
         }).encode('utf-8')
-        req = urllib.request.Request(
-            'https://api.sendgrid.com/v3/mail/send',
-            data=data,
-            headers={
-                'Authorization': f'Bearer {api_key}',
-                'Content-Type': 'application/json'
-            },
-            method='POST'
-        )
+        url = f'https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Messages.json'
+        req = urllib.request.Request(url, data=data, method='POST')
+        import base64
+        credentials = base64.b64encode(f'{account_sid}:{auth_token}'.encode()).decode()
+        req.add_header('Authorization', f'Basic {credentials}')
         urllib.request.urlopen(req)
-        print(f"Email sent to {to}")
+        print(f"SMS sent to {to}")
     except Exception as e:
-        print(f"Email error: {e}")
+        print(f"SMS error: {e}")
 
 @app.route('/')
 def home():
@@ -114,12 +116,9 @@ def add_parishioner():
              request.form['date_of_birth'], request.form['join_date'],
              request.form['status']])
         db.commit()
-        if request.form['email']:
-            send_email(
-                request.form['email'],
-                'Welcome to Our Parish!',
-                f"<h2>Welcome, {request.form['full_name']}!</h2><p>You have been successfully registered in our parish management system.</p><p>God bless you!</p>"
-            )
+        if request.form['phone']:
+            send_sms(request.form['phone'],
+                f"Welcome to our Parish, {request.form['full_name']}! You have been successfully registered. God bless you!")
         db.close()
         return redirect(url_for('parishioners'))
     return render_template('add_parishioner.html')
@@ -164,13 +163,10 @@ def add_event():
             [request.form['title'], request.form['event_date'],
              request.form['location'], request.form['description']])
         db.commit()
-        parishioners = db.execute('SELECT email, full_name FROM Parishioners WHERE email IS NOT NULL AND email != ""').fetchall()
+        parishioners = db.execute('SELECT phone, full_name FROM Parishioners WHERE phone IS NOT NULL AND phone != ""').fetchall()
         for p in parishioners:
-            send_email(
-                p['email'],
-                f"New Event: {request.form['title']}",
-                f"<h2>New Event Announced!</h2><p>Dear {p['full_name']},</p><p><strong>{request.form['title']}</strong> is scheduled for <strong>{request.form['event_date']}</strong> at {request.form['location']}.</p><p>{request.form['description']}</p>"
-            )
+            send_sms(p['phone'],
+                f"New Event: {request.form['title']} on {request.form['event_date']} at {request.form['location']}.")
         db.close()
         return redirect(url_for('events'))
     return render_template('add_event.html')
@@ -217,12 +213,9 @@ def add_contribution():
              request.form['notes']])
         db.commit()
         parishioner = db.execute('SELECT * FROM Parishioners WHERE id=?', [request.form['parishioner_id']]).fetchone()
-        if parishioner and parishioner['email']:
-            send_email(
-                parishioner['email'],
-                'Contribution Receipt',
-                f"<h2>Contribution Received</h2><p>Dear {parishioner['full_name']},</p><p>Thank you for your contribution of <strong>KSh {request.form['amount']}</strong> ({request.form['category']}) on {request.form['contribution_date']}.</p><p>God bless you!</p>"
-            )
+        if parishioner and parishioner['phone']:
+            send_sms(parishioner['phone'],
+                f"Dear {parishioner['full_name']}, your contribution of KSh {request.form['amount']} ({request.form['category']}) on {request.form['contribution_date']} has been received. Thank you!")
         db.close()
         return redirect(url_for('contributions'))
     db = get_db()
@@ -274,12 +267,9 @@ def add_sacrament():
              request.form['notes']])
         db.commit()
         parishioner = db.execute('SELECT * FROM Parishioners WHERE id=?', [request.form['parishioner_id']]).fetchone()
-        if parishioner and parishioner['email']:
-            send_email(
-                parishioner['email'],
-                f"Sacrament Record: {request.form['sacrament_type']}",
-                f"<h2>Sacramental Record Added</h2><p>Dear {parishioner['full_name']},</p><p>Your <strong>{request.form['sacrament_type']}</strong> record has been recorded on {request.form['date_received']}.</p><p>Officiant: {request.form['officiant']}</p>"
-            )
+        if parishioner and parishioner['phone']:
+            send_sms(parishioner['phone'],
+                f"Dear {parishioner['full_name']}, your {request.form['sacrament_type']} record has been added on {request.form['date_received']}.")
         db.close()
         return redirect(url_for('sacraments'))
     db = get_db()
@@ -327,38 +317,4 @@ def add_announcement():
             [request.form['title'], request.form['message'],
              request.form['audience']])
         db.commit()
-        parishioners = db.execute('SELECT email, full_name FROM Parishioners WHERE email IS NOT NULL AND email != ""').fetchall()
-        for p in parishioners:
-            send_email(
-                p['email'],
-                f"Parish Announcement: {request.form['title']}",
-                f"<h2>{request.form['title']}</h2><p>Dear {p['full_name']},</p><p>{request.form['message']}</p><p><small>Audience: {request.form['audience']}</small></p>"
-            )
-        db.close()
-        return redirect(url_for('announcements'))
-    return render_template('add_announcement.html')
-
-@app.route('/announcements/edit/<int:id>', methods=['GET', 'POST'])
-def edit_announcement(id):
-    db = get_db()
-    if request.method == 'POST':
-        db.execute('UPDATE announcements SET title=?, message=?, audience=? WHERE id=?',
-            [request.form['title'], request.form['message'],
-             request.form['audience'], id])
-        db.commit()
-        db.close()
-        return redirect(url_for('announcements'))
-    announcement = db.execute('SELECT * FROM announcements WHERE id=?', [id]).fetchone()
-    db.close()
-    return render_template('edit_announcement.html', a=announcement)
-
-@app.route('/announcements/delete/<int:id>')
-def delete_announcement(id):
-    db = get_db()
-    db.execute('DELETE FROM announcements WHERE id=?', [id])
-    db.commit()
-    db.close()
-    return redirect(url_for('announcements'))
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
+        parishioners = db.execute('SELECT phone, full_name FROM Parishioners WHERE phone IS NOT NULL AND phone != ""').fe
