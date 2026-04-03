@@ -56,7 +56,6 @@ def init_db():
         username TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
         role TEXT DEFAULT 'admin')''')
-    # Create default admin user if not exists
     existing = conn.execute('SELECT * FROM users WHERE username = "admin"').fetchone()
     if not existing:
         hashed = generate_password_hash('admin123')
@@ -126,6 +125,26 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for('login'))
+
+@app.route('/change-password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    if request.method == 'POST':
+        current = request.form['current_password']
+        new = request.form['new_password']
+        db = get_db()
+        user = db.execute('SELECT * FROM users WHERE id=?', [session['user_id']]).fetchone()
+        if check_password_hash(user['password'], current):
+            db.execute('UPDATE users SET password=? WHERE id=?',
+                [generate_password_hash(new), session['user_id']])
+            db.commit()
+            db.close()
+            flash('Password changed successfully!')
+            return redirect(url_for('home'))
+        else:
+            db.close()
+            flash('Current password is incorrect!')
+    return render_template('change_password.html')
 
 # ── Home ──────────────────────────────────────────────────
 @app.route('/')

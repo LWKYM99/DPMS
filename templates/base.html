@@ -74,7 +74,8 @@
             </a>
             {% if session.get('username') %}
             <div class="sidebar-footer">
-                <small class="text-muted">👤 {{ session['username'] }}</small><br>
+                <small class="text-white">👤 {{ session['username'] }}</small><br>
+                <a href="/change-password" class="btn btn-sm btn-warning mt-1 w-100">🔐 Change Password</a>
                 <a href="/logout" class="btn btn-sm btn-danger mt-1 w-100">Logout</a>
             </div>
             {% endif %}
