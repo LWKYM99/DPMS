@@ -155,12 +155,25 @@ def home():
     events = db.execute('SELECT * FROM events').fetchall()
     contributions = db.execute('SELECT * FROM contributions').fetchall()
     sacraments = db.execute('SELECT * FROM sacraments').fetchall()
+
+    contrib_rows = db.execute('SELECT category, SUM(amount) FROM contributions GROUP BY category').fetchall()
+    contrib_categories = [r[0] for r in contrib_rows]
+    contrib_amounts = [r[1] for r in contrib_rows]
+
+    sacrament_rows = db.execute('SELECT sacrament_type, COUNT(*) FROM sacraments GROUP BY sacrament_type').fetchall()
+    sacrament_types = [r[0] for r in sacrament_rows]
+    sacrament_counts = [r[1] for r in sacrament_rows]
+
     db.close()
     return render_template('home.html',
         parishioners=parishioners,
         events=events,
         contributions=contributions,
-        sacraments=sacraments)
+        sacraments=sacraments,
+        contrib_categories=contrib_categories,
+        contrib_amounts=contrib_amounts,
+        sacrament_types=sacrament_types,
+        sacrament_counts=sacrament_counts)
 
 # ── Parishioners ──────────────────────────────────────────
 @app.route('/parishioners')

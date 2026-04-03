@@ -7,41 +7,92 @@
 <!-- Summary Cards -->
 <div class="row mb-4">
     <div class="col-md-3">
-        <div class="card text-white bg-primary">
+        <div class="card text-white bg-primary shadow">
             <div class="card-body">
-                <h5 class="card-title">Total Parishioners</h5>
+                <h5 class="card-title">👥 Total Parishioners</h5>
                 <h2>{{ parishioners|length }}</h2>
+                <small>{{ parishioners|selectattr('status', 'equalto', 'Active')|list|length }} Active</small>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-white bg-success">
+        <div class="card text-white bg-success shadow">
             <div class="card-body">
-                <h5 class="card-title">Total Events</h5>
+                <h5 class="card-title">📅 Total Events</h5>
                 <h2>{{ events|length }}</h2>
+                <small>Upcoming & Past</small>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-white bg-warning">
+        <div class="card text-white bg-warning shadow">
             <div class="card-body">
-                <h5 class="card-title">Contributions</h5>
+                <h5 class="card-title">💰 Total Contributions</h5>
                 <h2>{{ contributions|length }}</h2>
+                <small>KSh {{ contributions|sum(attribute='amount')|int }}</small>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-white bg-danger">
+        <div class="card text-white bg-danger shadow">
             <div class="card-body">
-                <h5 class="card-title">Sacraments</h5>
+                <h5 class="card-title">✝️ Sacraments</h5>
                 <h2>{{ sacraments|length }}</h2>
+                <small>Records</small>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Parishioners Table -->
-<div class="card mb-4">
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">👥 Parishioners by Gender</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="genderChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">💰 Contributions by Category</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="contributionChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">✝️ Sacraments by Type</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="sacramentChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">👥 Active vs Inactive Parishioners</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Parishioners -->
+<div class="card mb-4 shadow">
     <div class="card-header bg-primary text-white d-flex justify-content-between">
         <h5 class="mb-0">Recent Parishioners</h5>
         <a href="/parishioners" class="btn btn-sm btn-light">View All</a>
@@ -57,7 +108,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for p in parishioners %}
+                {% for p in parishioners[:5] %}
                 <tr>
                     <td>{{ p['full_name'] }}</td>
                     <td>{{ p['phone'] }}</td>
@@ -76,8 +127,8 @@
     </div>
 </div>
 
-<!-- Events Table -->
-<div class="card mb-4">
+<!-- Upcoming Events -->
+<div class="card mb-4 shadow">
     <div class="card-header bg-success text-white d-flex justify-content-between">
         <h5 class="mb-0">Upcoming Events</h5>
         <a href="/events" class="btn btn-sm btn-light">View All</a>
@@ -92,7 +143,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for e in events %}
+                {% for e in events[:5] %}
                 <tr>
                     <td>{{ e['title'] }}</td>
                     <td>{{ e['event_date'] }}</td>
@@ -104,4 +155,69 @@
     </div>
 </div>
 
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Gender Chart
+    const genderData = {
+        {% set male = parishioners|selectattr('gender', 'equalto', 'Male')|list|length %}
+        {% set female = parishioners|selectattr('gender', 'equalto', 'Female')|list|length %}
+        labels: ['Male', 'Female'],
+        datasets: [{
+            data: [{{ male }}, {{ female }}],
+            backgroundColor: ['#0d6efd', '#e94560']
+        }]
+    };
+    new Chart(document.getElementById('genderChart'), {
+        type: 'pie',
+        data: genderData
+    });
+
+    // Status Chart
+    const statusData = {
+        {% set active = parishioners|selectattr('status', 'equalto', 'Active')|list|length %}
+        {% set inactive = parishioners|selectattr('status', 'equalto', 'Inactive')|list|length %}
+        labels: ['Active', 'Inactive'],
+        datasets: [{
+            data: [{{ active }}, {{ inactive }}],
+            backgroundColor: ['#198754', '#6c757d']
+        }]
+    };
+    new Chart(document.getElementById('statusChart'), {
+        type: 'doughnut',
+        data: statusData
+    });
+
+    // Contributions Chart
+    const contribLabels = {{ contrib_categories | tojson }};
+    const contribData = {{ contrib_amounts | tojson }};
+    new Chart(document.getElementById('contributionChart'), {
+        type: 'bar',
+        data: {
+            labels: contribLabels,
+            datasets: [{
+                label: 'KSh',
+                data: contribData,
+                backgroundColor: '#ffc107'
+            }]
+        },
+        options: { scales: { y: { beginAtZero: true } } }
+    });
+
+    // Sacraments Chart
+    const sacramentLabels = {{ sacrament_types | tojson }};
+    const sacramentData = {{ sacrament_counts | tojson }};
+    new Chart(document.getElementById('sacramentChart'), {
+        type: 'bar',
+        data: {
+            labels: sacramentLabels,
+            datasets: [{
+                label: 'Count',
+                data: sacramentData,
+                backgroundColor: '#dc3545'
+            }]
+        },
+        options: { scales: { y: { beginAtZero: true } } }
+    });
+</script>
 {% endblock %}
