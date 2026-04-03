@@ -36,6 +36,13 @@
             background-color: #f8f9fa;
             min-height: 100vh;
         }
+        .sidebar-footer {
+            position: fixed;
+            bottom: 0;
+            width: 16.666%;
+            background-color: #16213e;
+            padding: 10px 20px;
+        }
     </style>
 </head>
 <body>
@@ -65,6 +72,12 @@
             <a href="/announcements" class="{% if request.path == '/announcements' %}active{% endif %}">
                 📢 Announcements
             </a>
+            {% if session.get('username') %}
+            <div class="sidebar-footer">
+                <small class="text-muted">👤 {{ session['username'] }}</small><br>
+                <a href="/logout" class="btn btn-sm btn-danger mt-1 w-100">Logout</a>
+            </div>
+            {% endif %}
         </div>
 
         <!-- Main Content -->

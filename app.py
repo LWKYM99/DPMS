@@ -1,10 +1,12 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 import sqlite3
 import os
 import urllib.request
 import urllib.parse
 import json
 import base64
+from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 
 def init_db():
     conn = sqlite3.connect('dpms.db')
@@ -49,16 +51,36 @@ def init_db():
         parishioner_id INTEGER,
         event_id INTEGER,
         attended TEXT DEFAULT 'Yes')''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        role TEXT DEFAULT 'admin')''')
+    # Create default admin user if not exists
+    existing = conn.execute('SELECT * FROM users WHERE username = "admin"').fetchone()
+    if not existing:
+        hashed = generate_password_hash('admin123')
+        conn.execute('INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
+            ['admin', hashed, 'admin'])
     conn.commit()
     conn.close()
 
 app = Flask(__name__)
+app.secret_key = os.environ.get('SECRET_KEY', 'dpms-secret-key-2024')
 init_db()
 
 def get_db():
     conn = sqlite3.connect('dpms.db')
     conn.row_factory = sqlite3.Row
     return conn
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 def send_sms(to, message):
     try:
@@ -84,7 +106,30 @@ def send_sms(to, message):
     except Exception as e:
         print(f"SMS error: {e}")
 
+# ── Auth ──────────────────────────────────────────────────
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        db = get_db()
+        user = db.execute('SELECT * FROM users WHERE username = ?', [username]).fetchone()
+        db.close()
+        if user and check_password_hash(user['password'], password):
+            session['user_id'] = user['id']
+            session['username'] = user['username']
+            return redirect(url_for('home'))
+        flash('Invalid username or password')
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
+# ── Home ──────────────────────────────────────────────────
 @app.route('/')
+@login_required
 def home():
     db = get_db()
     parishioners = db.execute('SELECT * FROM Parishioners').fetchall()
@@ -100,6 +145,7 @@ def home():
 
 # ── Parishioners ──────────────────────────────────────────
 @app.route('/parishioners')
+@login_required
 def parishioners():
     db = get_db()
     data = db.execute('SELECT * FROM Parishioners').fetchall()
@@ -107,6 +153,7 @@ def parishioners():
     return render_template('parishioners.html', parishioners=data)
 
 @app.route('/parishioners/add', methods=['GET', 'POST'])
+@login_required
 def add_parishioner():
     if request.method == 'POST':
         db = get_db()
@@ -124,6 +171,7 @@ def add_parishioner():
     return render_template('add_parishioner.html')
 
 @app.route('/parishioners/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
 def edit_parishioner(id):
     db = get_db()
     if request.method == 'POST':
@@ -140,6 +188,7 @@ def edit_parishioner(id):
     return render_template('edit_parishioner.html', p=parishioner)
 
 @app.route('/parishioners/delete/<int:id>')
+@login_required
 def delete_parishioner(id):
     db = get_db()
     db.execute('DELETE FROM Parishioners WHERE id=?', [id])
@@ -149,6 +198,7 @@ def delete_parishioner(id):
 
 # ── Events ────────────────────────────────────────────────
 @app.route('/events')
+@login_required
 def events():
     db = get_db()
     data = db.execute('SELECT * FROM events').fetchall()
@@ -156,6 +206,7 @@ def events():
     return render_template('events.html', events=data)
 
 @app.route('/events/add', methods=['GET', 'POST'])
+@login_required
 def add_event():
     if request.method == 'POST':
         db = get_db()
@@ -172,6 +223,7 @@ def add_event():
     return render_template('add_event.html')
 
 @app.route('/events/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
 def edit_event(id):
     db = get_db()
     if request.method == 'POST':
@@ -186,6 +238,7 @@ def edit_event(id):
     return render_template('edit_event.html', e=event)
 
 @app.route('/events/delete/<int:id>')
+@login_required
 def delete_event(id):
     db = get_db()
     db.execute('DELETE FROM events WHERE id=?', [id])
@@ -195,6 +248,7 @@ def delete_event(id):
 
 # ── Contributions ─────────────────────────────────────────
 @app.route('/contributions')
+@login_required
 def contributions():
     db = get_db()
     data = db.execute('''SELECT c.*, p.full_name 
@@ -204,6 +258,7 @@ def contributions():
     return render_template('contributions.html', contributions=data)
 
 @app.route('/contributions/add', methods=['GET', 'POST'])
+@login_required
 def add_contribution():
     if request.method == 'POST':
         db = get_db()
@@ -224,6 +279,7 @@ def add_contribution():
     return render_template('add_contribution.html', parishioners=parishioners)
 
 @app.route('/contributions/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
 def edit_contribution(id):
     db = get_db()
     if request.method == 'POST':
@@ -240,6 +296,7 @@ def edit_contribution(id):
     return render_template('edit_contribution.html', c=contribution, parishioners=parishioners)
 
 @app.route('/contributions/delete/<int:id>')
+@login_required
 def delete_contribution(id):
     db = get_db()
     db.execute('DELETE FROM contributions WHERE id=?', [id])
@@ -249,6 +306,7 @@ def delete_contribution(id):
 
 # ── Sacraments ────────────────────────────────────────────
 @app.route('/sacraments')
+@login_required
 def sacraments():
     db = get_db()
     data = db.execute('''SELECT s.*, p.full_name 
@@ -258,6 +316,7 @@ def sacraments():
     return render_template('sacraments.html', sacraments=data)
 
 @app.route('/sacraments/add', methods=['GET', 'POST'])
+@login_required
 def add_sacrament():
     if request.method == 'POST':
         db = get_db()
@@ -278,6 +337,7 @@ def add_sacrament():
     return render_template('add_sacrament.html', parishioners=parishioners)
 
 @app.route('/sacraments/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
 def edit_sacrament(id):
     db = get_db()
     if request.method == 'POST':
@@ -294,6 +354,7 @@ def edit_sacrament(id):
     return render_template('edit_sacrament.html', s=sacrament, parishioners=parishioners)
 
 @app.route('/sacraments/delete/<int:id>')
+@login_required
 def delete_sacrament(id):
     db = get_db()
     db.execute('DELETE FROM sacraments WHERE id=?', [id])
@@ -303,6 +364,7 @@ def delete_sacrament(id):
 
 # ── Announcements ─────────────────────────────────────────
 @app.route('/announcements')
+@login_required
 def announcements():
     db = get_db()
     data = db.execute('SELECT * FROM announcements').fetchall()
@@ -310,6 +372,7 @@ def announcements():
     return render_template('announcements.html', announcements=data)
 
 @app.route('/announcements/add', methods=['GET', 'POST'])
+@login_required
 def add_announcement():
     if request.method == 'POST':
         db = get_db()
@@ -326,6 +389,7 @@ def add_announcement():
     return render_template('add_announcement.html')
 
 @app.route('/announcements/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
 def edit_announcement(id):
     db = get_db()
     if request.method == 'POST':
@@ -340,6 +404,7 @@ def edit_announcement(id):
     return render_template('edit_announcement.html', a=announcement)
 
 @app.route('/announcements/delete/<int:id>')
+@login_required
 def delete_announcement(id):
     db = get_db()
     db.execute('DELETE FROM announcements WHERE id=?', [id])
