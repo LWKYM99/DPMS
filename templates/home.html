@@ -9,7 +9,7 @@
     <div class="col-md-3">
         <div class="card text-white bg-primary shadow">
             <div class="card-body">
-                <h5 class="card-title">👥 Total Parishioners</h5>
+                <h5 class="card-title">Total Parishioners</h5>
                 <h2>{{ parishioners|length }}</h2>
                 <small>{{ parishioners|selectattr('status', 'equalto', 'Active')|list|length }} Active</small>
             </div>
@@ -18,7 +18,7 @@
     <div class="col-md-3">
         <div class="card text-white bg-success shadow">
             <div class="card-body">
-                <h5 class="card-title">📅 Total Events</h5>
+                <h5 class="card-title">Total Events</h5>
                 <h2>{{ events|length }}</h2>
                 <small>Upcoming & Past</small>
             </div>
@@ -27,7 +27,7 @@
     <div class="col-md-3">
         <div class="card text-white bg-warning shadow">
             <div class="card-body">
-                <h5 class="card-title">💰 Total Contributions</h5>
+                <h5 class="card-title">Total Contributions</h5>
                 <h2>{{ contributions|length }}</h2>
                 <small>KSh {{ contributions|sum(attribute='amount')|int }}</small>
             </div>
@@ -36,7 +36,7 @@
     <div class="col-md-3">
         <div class="card text-white bg-danger shadow">
             <div class="card-body">
-                <h5 class="card-title">✝️ Sacraments</h5>
+                <h5 class="card-title">Sacraments</h5>
                 <h2>{{ sacraments|length }}</h2>
                 <small>Records</small>
             </div>
@@ -49,7 +49,7 @@
     <div class="col-md-6">
         <div class="card shadow">
             <div class="card-header bg-dark text-white">
-                <h5 class="mb-0">👥 Parishioners by Gender</h5>
+                <h5 class="mb-0">Parishioners by Gender</h5>
             </div>
             <div class="card-body">
                 <canvas id="genderChart"></canvas>
@@ -59,7 +59,7 @@
     <div class="col-md-6">
         <div class="card shadow">
             <div class="card-header bg-dark text-white">
-                <h5 class="mb-0">💰 Contributions by Category</h5>
+                <h5 class="mb-0">Contributions by Category</h5>
             </div>
             <div class="card-body">
                 <canvas id="contributionChart"></canvas>
@@ -72,7 +72,7 @@
     <div class="col-md-6">
         <div class="card shadow">
             <div class="card-header bg-dark text-white">
-                <h5 class="mb-0">✝️ Sacraments by Type</h5>
+                <h5 class="mb-0">Sacraments by Type</h5>
             </div>
             <div class="card-body">
                 <canvas id="sacramentChart"></canvas>
@@ -82,7 +82,7 @@
     <div class="col-md-6">
         <div class="card shadow">
             <div class="card-header bg-dark text-white">
-                <h5 class="mb-0">👥 Active vs Inactive Parishioners</h5>
+                <h5 class="mb-0">Active vs Inactive Parishioners</h5>
             </div>
             <div class="card-body">
                 <canvas id="statusChart"></canvas>
@@ -155,65 +155,56 @@
     </div>
 </div>
 
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Gender Chart
-    const genderData = {
-        {% set male = parishioners|selectattr('gender', 'equalto', 'Male')|list|length %}
-        {% set female = parishioners|selectattr('gender', 'equalto', 'Female')|list|length %}
-        labels: ['Male', 'Female'],
-        datasets: [{
-            data: [{{ male }}, {{ female }}],
-            backgroundColor: ['#0d6efd', '#e94560']
-        }]
-    };
     new Chart(document.getElementById('genderChart'), {
         type: 'pie',
-        data: genderData
+        data: {
+            labels: ['Male', 'Female'],
+            datasets: [{
+                data: [
+                    {{ parishioners|selectattr('gender', 'equalto', 'Male')|list|length }},
+                    {{ parishioners|selectattr('gender', 'equalto', 'Female')|list|length }}
+                ],
+                backgroundColor: ['#0d6efd', '#e94560']
+            }]
+        }
     });
 
-    // Status Chart
-    const statusData = {
-        {% set active = parishioners|selectattr('status', 'equalto', 'Active')|list|length %}
-        {% set inactive = parishioners|selectattr('status', 'equalto', 'Inactive')|list|length %}
-        labels: ['Active', 'Inactive'],
-        datasets: [{
-            data: [{{ active }}, {{ inactive }}],
-            backgroundColor: ['#198754', '#6c757d']
-        }]
-    };
     new Chart(document.getElementById('statusChart'), {
         type: 'doughnut',
-        data: statusData
+        data: {
+            labels: ['Active', 'Inactive'],
+            datasets: [{
+                data: [
+                    {{ parishioners|selectattr('status', 'equalto', 'Active')|list|length }},
+                    {{ parishioners|selectattr('status', 'equalto', 'Inactive')|list|length }}
+                ],
+                backgroundColor: ['#198754', '#6c757d']
+            }]
+        }
     });
 
-    // Contributions Chart
-    const contribLabels = {{ contrib_categories | tojson }};
-    const contribData = {{ contrib_amounts | tojson }};
     new Chart(document.getElementById('contributionChart'), {
         type: 'bar',
         data: {
-            labels: contribLabels,
+            labels: {{ contrib_categories | tojson }},
             datasets: [{
                 label: 'KSh',
-                data: contribData,
+                data: {{ contrib_amounts | tojson }},
                 backgroundColor: '#ffc107'
             }]
         },
         options: { scales: { y: { beginAtZero: true } } }
     });
 
-    // Sacraments Chart
-    const sacramentLabels = {{ sacrament_types | tojson }};
-    const sacramentData = {{ sacrament_counts | tojson }};
     new Chart(document.getElementById('sacramentChart'), {
         type: 'bar',
         data: {
-            labels: sacramentLabels,
+            labels: {{ sacrament_types | tojson }},
             datasets: [{
                 label: 'Count',
-                data: sacramentData,
+                data: {{ sacrament_counts | tojson }},
                 backgroundColor: '#dc3545'
             }]
         },
