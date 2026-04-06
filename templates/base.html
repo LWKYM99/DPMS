@@ -52,30 +52,30 @@
         <!-- Sidebar -->
         <div class="col-md-2 sidebar p-0">
             <div class="sidebar-header">
-                ⛪ DPMS
+                DPMS
             </div>
             <a href="/" class="{% if request.path == '/' %}active{% endif %}">
-                📊 Dashboard
+                Dashboard
             </a>
             <a href="/parishioners" class="{% if request.path == '/parishioners' %}active{% endif %}">
-                👥 Parishioners
+                Parishioners
             </a>
             <a href="/events" class="{% if request.path == '/events' %}active{% endif %}">
-                📅 Events
+                Events
             </a>
             <a href="/contributions" class="{% if request.path == '/contributions' %}active{% endif %}">
-                💰 Contributions
+                Contributions
             </a>
             <a href="/sacraments" class="{% if request.path == '/sacraments' %}active{% endif %}">
-                ✝️ Sacraments
+                Sacraments
             </a>
             <a href="/announcements" class="{% if request.path == '/announcements' %}active{% endif %}">
-                📢 Announcements
+                Announcements
             </a>
             {% if session.get('username') %}
             <div class="sidebar-footer">
-                <small class="text-white">👤 {{ session['username'] }}</small><br>
-                <a href="/change-password" class="btn btn-sm btn-warning mt-1 w-100">🔐 Change Password</a>
+                <small class="text-white">{{ session['username'] }}</small><br>
+                <a href="/change-password" class="btn btn-sm btn-warning mt-1 w-100">Change Password</a>
                 <a href="/logout" class="btn btn-sm btn-danger mt-1 w-100">Logout</a>
             </div>
             {% endif %}
