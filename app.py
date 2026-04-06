@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, make_response
 import sqlite3
 import os
 import urllib.request
@@ -7,6 +7,12 @@ import json
 import base64
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import inch
+from io import BytesIO
 
 def init_db():
     conn = sqlite3.connect('dpms.db')
@@ -105,6 +111,41 @@ def send_sms(to, message):
     except Exception as e:
         print(f"SMS error: {e}")
 
+def generate_pdf(title, headers, rows, summary=None):
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
+    styles = getSampleStyleSheet()
+    elements = []
+
+    # Title
+    elements.append(Paragraph(f"<b>Diocese Parish Management System</b>", styles['Title']))
+    elements.append(Paragraph(title, styles['Heading2']))
+    elements.append(Spacer(1, 0.2 * inch))
+
+    # Summary if provided
+    if summary:
+        elements.append(Paragraph(summary, styles['Normal']))
+        elements.append(Spacer(1, 0.2 * inch))
+
+    # Table
+    data = [headers] + rows
+    table = Table(data, repeatRows=1)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a1a2e')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f8f9fa')]),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('PADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(table)
+    doc.build(elements)
+    buffer.seek(0)
+    return buffer
+
 # ── Auth ──────────────────────────────────────────────────
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -155,15 +196,12 @@ def home():
     events = db.execute('SELECT * FROM events').fetchall()
     contributions = db.execute('SELECT * FROM contributions').fetchall()
     sacraments = db.execute('SELECT * FROM sacraments').fetchall()
-
     contrib_rows = db.execute('SELECT category, SUM(amount) FROM contributions GROUP BY category').fetchall()
     contrib_categories = [r[0] for r in contrib_rows]
     contrib_amounts = [r[1] for r in contrib_rows]
-
     sacrament_rows = db.execute('SELECT sacrament_type, COUNT(*) FROM sacraments GROUP BY sacrament_type').fetchall()
     sacrament_types = [r[0] for r in sacrament_rows]
     sacrament_counts = [r[1] for r in sacrament_rows]
-
     db.close()
     return render_template('home.html',
         parishioners=parishioners,
@@ -228,6 +266,24 @@ def delete_parishioner(id):
     db.close()
     return redirect(url_for('parishioners'))
 
+@app.route('/parishioners/report')
+@login_required
+def parishioners_report():
+    db = get_db()
+    data = db.execute('SELECT * FROM Parishioners').fetchall()
+    db.close()
+    headers = ['ID', 'Full Name', 'Phone', 'Email', 'Gender', 'Date of Birth', 'Join Date', 'Status']
+    rows = [[p['id'], p['full_name'], p['phone'] or '', p['email'] or '',
+             p['gender'] or '', p['date_of_birth'] or '', p['join_date'] or '', p['status']] for p in data]
+    total = len(data)
+    active = len([p for p in data if p['status'] == 'Active'])
+    summary = f"Total Parishioners: {total} | Active: {active} | Inactive: {total - active}"
+    buffer = generate_pdf("Parishioners Report", headers, rows, summary)
+    response = make_response(buffer.read())
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = 'attachment; filename=parishioners_report.pdf'
+    return response
+
 # ── Events ────────────────────────────────────────────────
 @app.route('/events')
 @login_required
@@ -277,6 +333,21 @@ def delete_event(id):
     db.commit()
     db.close()
     return redirect(url_for('events'))
+
+@app.route('/events/report')
+@login_required
+def events_report():
+    db = get_db()
+    data = db.execute('SELECT * FROM events').fetchall()
+    db.close()
+    headers = ['ID', 'Title', 'Date', 'Location', 'Description']
+    rows = [[e['id'], e['title'], e['event_date'], e['location'] or '', e['description'] or ''] for e in data]
+    summary = f"Total Events: {len(data)}"
+    buffer = generate_pdf("Events Report", headers, rows, summary)
+    response = make_response(buffer.read())
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = 'attachment; filename=events_report.pdf'
+    return response
 
 # ── Contributions ─────────────────────────────────────────
 @app.route('/contributions')
@@ -336,6 +407,25 @@ def delete_contribution(id):
     db.close()
     return redirect(url_for('contributions'))
 
+@app.route('/contributions/report')
+@login_required
+def contributions_report():
+    db = get_db()
+    data = db.execute('''SELECT c.*, p.full_name 
+                        FROM contributions c 
+                        JOIN Parishioners p ON c.parishioner_id = p.id''').fetchall()
+    db.close()
+    headers = ['ID', 'Parishioner', 'Amount (KSh)', 'Category', 'Date', 'Notes']
+    rows = [[c['id'], c['full_name'], c['amount'], c['category'],
+             c['contribution_date'], c['notes'] or ''] for c in data]
+    total = sum(c['amount'] for c in data)
+    summary = f"Total Contributions: {len(data)} | Total Amount: KSh {total:,.2f}"
+    buffer = generate_pdf("Contributions Report", headers, rows, summary)
+    response = make_response(buffer.read())
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = 'attachment; filename=contributions_report.pdf'
+    return response
+
 # ── Sacraments ────────────────────────────────────────────
 @app.route('/sacraments')
 @login_required
@@ -393,6 +483,24 @@ def delete_sacrament(id):
     db.commit()
     db.close()
     return redirect(url_for('sacraments'))
+
+@app.route('/sacraments/report')
+@login_required
+def sacraments_report():
+    db = get_db()
+    data = db.execute('''SELECT s.*, p.full_name 
+                        FROM sacraments s 
+                        JOIN Parishioners p ON s.parishioner_id = p.id''').fetchall()
+    db.close()
+    headers = ['ID', 'Parishioner', 'Sacrament', 'Date Received', 'Officiant', 'Notes']
+    rows = [[s['id'], s['full_name'], s['sacrament_type'],
+             s['date_received'] or '', s['officiant'] or '', s['notes'] or ''] for s in data]
+    summary = f"Total Sacramental Records: {len(data)}"
+    buffer = generate_pdf("Sacraments Report", headers, rows, summary)
+    response = make_response(buffer.read())
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = 'attachment; filename=sacraments_report.pdf'
+    return response
 
 # ── Announcements ─────────────────────────────────────────
 @app.route('/announcements')

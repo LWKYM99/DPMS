@@ -4,11 +4,43 @@
 {% block content %}
 <div class="d-flex justify-content-between mb-4">
     <h2>Sacramental Records</h2>
-    <a href="/sacraments/add" class="btn btn-primary">+ Add Sacrament</a>
+    <div>
+        <a href="/sacraments/add" class="btn btn-primary">+ Add Sacrament</a>
+        <a href="/sacraments/report" class="btn btn-secondary">Download PDF</a>
+    </div>
+</div>
+
+<!-- Search & Filter -->
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row g-2">
+            <div class="col-md-4">
+                <input type="text" id="searchInput" class="form-control" placeholder="Search by name...">
+            </div>
+            <div class="col-md-3">
+                <select id="typeFilter" class="form-select">
+                    <option value="">All Sacraments</option>
+                    <option>Baptism</option>
+                    <option>Confirmation</option>
+                    <option>Holy Communion</option>
+                    <option>Marriage</option>
+                    <option>Holy Orders</option>
+                    <option>Anointing of the Sick</option>
+                    <option>Confession</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-secondary w-100" onclick="resetFilters()">Reset</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="card">
     <div class="card-body">
+        <div class="mb-2">
+            <small class="text-muted">Showing <span id="rowCount">0</span> records</small>
+        </div>
         <table class="table table-striped table-hover">
             <thead class="table-dark">
                 <tr>
@@ -21,7 +53,7 @@
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="tableBody">
                 {% for s in sacraments %}
                 <tr>
                     <td>{{ s['id'] }}</td>
@@ -40,4 +72,36 @@
         </table>
     </div>
 </div>
+
+<script>
+    function filterTable() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const type = document.getElementById('typeFilter').value.toLowerCase();
+        const rows = document.querySelectorAll('#tableBody tr');
+        let count = 0;
+        rows.forEach(row => {
+            const name = row.cells[1].textContent.toLowerCase();
+            const rowType = row.cells[2].textContent.toLowerCase();
+            const matchSearch = name.includes(search);
+            const matchType = type === '' || rowType === type;
+            if (matchSearch && matchType) {
+                row.style.display = '';
+                count++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        document.getElementById('rowCount').textContent = count;
+    }
+
+    function resetFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('typeFilter').value = '';
+        filterTable();
+    }
+
+    document.getElementById('searchInput').addEventListener('keyup', filterTable);
+    document.getElementById('typeFilter').addEventListener('change', filterTable);
+    filterTable();
+</script>
 {% endblock %}

@@ -4,7 +4,10 @@
 {% block content %}
 <div class="d-flex justify-content-between mb-4">
     <h2>Parishioners</h2>
-    <a href="/parishioners/add" class="btn btn-primary">+ Add Parishioner</a>
+    <div>
+        <a href="/parishioners/add" class="btn btn-primary">+ Add Parishioner</a>
+        <a href="/parishioners/report" class="btn btn-secondary">Download PDF</a>
+    </div>
 </div>
 
 <!-- Search & Filter -->
@@ -89,18 +92,15 @@
         const status = document.getElementById('statusFilter').value.toLowerCase();
         const rows = document.querySelectorAll('#tableBody tr');
         let count = 0;
-
         rows.forEach(row => {
             const name = row.cells[1].textContent.toLowerCase();
             const phone = row.cells[2].textContent.toLowerCase();
             const email = row.cells[3].textContent.toLowerCase();
             const rowGender = row.cells[4].textContent.toLowerCase();
             const rowStatus = row.cells[7].textContent.toLowerCase();
-
             const matchSearch = name.includes(search) || phone.includes(search) || email.includes(search);
             const matchGender = gender === '' || rowGender === gender;
             const matchStatus = status === '' || rowStatus.includes(status);
-
             if (matchSearch && matchGender && matchStatus) {
                 row.style.display = '';
                 count++;
@@ -108,7 +108,6 @@
                 row.style.display = 'none';
             }
         });
-
         document.getElementById('rowCount').textContent = count;
     }
 
@@ -122,8 +121,6 @@
     document.getElementById('searchInput').addEventListener('keyup', filterTable);
     document.getElementById('genderFilter').addEventListener('change', filterTable);
     document.getElementById('statusFilter').addEventListener('change', filterTable);
-
-    // Initialize count
     filterTable();
 </script>
 {% endblock %}
